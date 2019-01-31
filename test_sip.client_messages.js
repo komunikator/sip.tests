@@ -1,9 +1,9 @@
 let SIP = require('sip.client');
 let fs = require('fs');
+let sipServer;
 
 describe('Send Message Tests', function() {
 
-    /*
     it('Start Sip Server Register Unregister', function(done) {
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
         this.timeout(30000);
@@ -22,24 +22,25 @@ describe('Send Message Tests', function() {
             },
             tls: {
                 port: 5062,
-                key: 'node_modules/sip_server/server_localhost.key',
-                cert: 'node_modules/sip_server/server_localhost.crt'
+                key: 'server_localhost.key',
+                cert: 'server_localhost.crt',
+                secureProtocol: 'TLSv1.2'
             },
             wss: {
                 port: 8507,
-                key: 'node_modules/sip_server/server_localhost.key',
-                cert: 'node_modules/sip_server/server_localhost.crt'
+                key: 'server_localhost.key',
+                cert: 'server_localhost.crt'
             }
         };
 
         // Чтение сертификатов сертификата
-        let sslTls = getCertificate(settings.tls.key, settings.tls.cert);
-        settings['tls']['key'] = sslTls['key'];
-        settings['tls']['cert'] = sslTls['cert'];
+        // let sslTls = getCertificate(settings.tls.key, settings.tls.cert);
+        // settings['tls']['key'] = sslTls['key'];
+        // settings['tls']['cert'] = sslTls['cert'];
 
-        let sslWss = getCertificate(settings.wss.key, settings.wss.cert);
-        settings['wss']['key'] = sslWss['key'];
-        settings['wss']['cert'] = sslWss['cert'];
+        // let sslWss = getCertificate(settings.wss.key, settings.wss.cert);
+        // settings['wss']['key'] = sslWss['key'];
+        // settings['wss']['cert'] = sslWss['cert'];
 
         function getCertificate(keyPath, crtPath) {
             let key = '';
@@ -56,8 +57,8 @@ describe('Send Message Tests', function() {
             };
         }
 
-        let sipServer = new sipServerModule.SipServer(settings);
-        sipServer.ProxyStart();
+        sipServer = new sipServerModule.SipServer(settings);
+        sipServer.ProxyStart(settings);
 
         let uaAlice = new SIP.UA({
             //uri: 'sip:1@127.0.0.1',
@@ -93,7 +94,6 @@ describe('Send Message Tests', function() {
         });
         uaAlice.start();
     });
-    */
 
     it('Send Message 2xWS <- WS', function(done) {
         this.timeout(20000);
@@ -120,9 +120,11 @@ describe('Send Message Tests', function() {
                 //transport: 'tls'
         });
 
+        let ua11;
+
         ua1.on('registered', function() {
 
-            let ua11 = new SIP.UA({
+            ua11 = new SIP.UA({
                 //uri: 'sip:1@127.0.0.1',
                 uri: 'sip:1@127.0.0.1',
                 user: '1',
@@ -147,8 +149,6 @@ describe('Send Message Tests', function() {
 
             ua11.on('message', function(msg) {
                 counterMessages++;
-                ua11.unregister();
-                uaAlice.unregister();
     
                 console.log('MESSAGE ua11', msg.body, 'counterMessages', counterMessages);
 
@@ -156,6 +156,12 @@ describe('Send Message Tests', function() {
                     // setTimeout(function() {
                         // console.log('The received message UA11');
                         if (counterMessages == 2) {
+                            clearTimeout(timer);
+
+                            ua1.unregister();
+                            ua11.unregister();
+                            uaAlice.unregister();
+                            
                             done();
                         }
                     // }, 1000);
@@ -169,8 +175,6 @@ describe('Send Message Tests', function() {
             // console.log('MESSAGE', msg);
             counterMessages++;
 
-            ua1.unregister();
-            uaAlice.unregister();
 
             console.log('MESSAGE ua1', msg.body, 'counterMessages', counterMessages);
 
@@ -178,6 +182,12 @@ describe('Send Message Tests', function() {
                 // setTimeout(function() {
                     // console.log('The received message UA1');
                     if (counterMessages == 2) {
+                        clearTimeout(timer);
+
+                        ua1.unregister();
+                        ua11.unregister();
+                        uaAlice.unregister();
+
                         done();
                     }
                 // }, 1000);
@@ -187,6 +197,14 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+
+            ua1.unregister();
+            ua11.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -250,11 +268,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
-            ua1.unregister();
-            uaAlice.unregister();
+            clearTimeout(timer);
 
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
+                    ua1.unregister();
+                    uaAlice.unregister();
                     done();
                 }, 1000);
             } else {
@@ -263,6 +282,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -324,8 +349,11 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
+
             ua1.unregister();
             uaAlice.unregister();
+
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
                     done();
@@ -336,6 +364,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -397,6 +431,8 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
+
             ua1.unregister();
             uaAlice.unregister();
 
@@ -411,6 +447,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -474,6 +516,8 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
+
             ua1.unregister();
             uaAlice.unregister();
 
@@ -488,6 +532,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -548,6 +598,8 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
+
             ua1.unregister();
             uaAlice.unregister();
 
@@ -561,6 +613,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -621,8 +679,11 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
+
             ua1.unregister();
             uaAlice.unregister();
+
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
                     done();
@@ -633,6 +694,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -695,6 +762,7 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
             ua1.unregister();
             uaAlice.unregister();
 
@@ -709,6 +777,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -769,6 +843,8 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
+
             ua1.unregister();
             uaAlice.unregister();
 
@@ -783,6 +859,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -844,6 +926,8 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
+
             ua1.unregister();
             uaAlice.unregister();
 
@@ -857,6 +941,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -917,8 +1007,11 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
+
             ua1.unregister();
             uaAlice.unregister();
+
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
                     done();
@@ -929,6 +1022,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -989,6 +1088,8 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
+
             ua1.unregister();
             uaAlice.unregister();
 
@@ -1003,6 +1104,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -1063,6 +1170,8 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
+
             ua1.unregister();
             uaAlice.unregister();
 
@@ -1077,6 +1186,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -1137,6 +1252,8 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
+
             ua1.unregister();
             uaAlice.unregister();
 
@@ -1150,6 +1267,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -1210,8 +1333,11 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
+
             ua1.unregister();
             uaAlice.unregister();
+
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
                     done();
@@ -1222,6 +1348,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -1282,6 +1414,8 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
+
             ua1.unregister();
             uaAlice.unregister();
 
@@ -1296,6 +1430,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -1356,6 +1496,8 @@ describe('Send Message Tests', function() {
         });
 
         ua1.on('message', function(msg) {
+            clearTimeout(timer);
+
             ua1.unregister();
             uaAlice.unregister();
 
@@ -1370,6 +1512,12 @@ describe('Send Message Tests', function() {
         });
 
         ua1.start();
+
+        let timer = setTimeout(() => {
+            ua1.unregister();
+            uaAlice.unregister();
+            done('Cработал таймаут');
+        }, 3000);
 
         function startAlice() {
             uaAlice = new SIP.UA({
@@ -1402,4 +1550,47 @@ describe('Send Message Tests', function() {
         }
     });
 
+
+    it('Stop Sip Server', function(done) {
+        this.timeout(30000);
+
+        sipServer.stop();
+        
+        let uaAlice = new SIP.UA({
+            //uri: 'sip:1@127.0.0.1',
+            uri: 'sip:1@127.0.0.1',
+            user: '1',
+            password: '1',
+            // wsServers: ['ws://127.0.0.1:8506'],
+            //wsServers: ['udp://127.0.0.1:5060'],
+            //wsServers: ['tcp://127.0.0.1:5061'],
+            wsServers: ['tls://127.0.0.1:5062'],
+            register: true,
+            // mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
+            //mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
+            registerExpires: 120,
+            // transport: 'ws'
+            //transport: 'udp'
+            //transport: 'tcp'
+            transport: 'tls'
+        });
+
+        uaAlice.on('registered', function() {
+            clearTimeout(timer);
+            uaAlice.unregister();
+            uaAlice.stop();
+            done('Ошибка: Зарегистрировался аккаунт к остановленному сип серверу');
+        });
+
+
+        let timer = setTimeout(() => {
+            uaAlice.unregister();
+            done();
+        }, 7000);
+
+        uaAlice.start();
+    });
+
 });
+
+
