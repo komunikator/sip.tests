@@ -82,15 +82,17 @@ describe('Send Message Tests', function() {
         uaAlice.on('registered', function() {
             uaAlice.unregister();
         });
-
+        
         uaAlice.on('unregistered', function(response, err) {
-            setTimeout(function() {
+            uaAlice.unregister();
+            uaAlice.stop();
+            // setTimeout(function() {
                 if (err) {
                     done(err);
                 } else {
                     done();
                 }
-            }, 1000);
+            // }, 1000);
         });
         uaAlice.start();
     });
@@ -159,8 +161,11 @@ describe('Send Message Tests', function() {
                             clearTimeout(timer);
 
                             ua1.unregister();
+                            ua1.stop();
                             ua11.unregister();
+                            ua11.stop();
                             uaAlice.unregister();
+                            uaAlice.stop();
                             
                             done();
                         }
@@ -185,8 +190,11 @@ describe('Send Message Tests', function() {
                         clearTimeout(timer);
 
                         ua1.unregister();
+                        ua1.stop();
                         ua11.unregister();
+                        ua11.stop();
                         uaAlice.unregister();
+                        uaAlice.stop();
 
                         done();
                     }
@@ -201,8 +209,12 @@ describe('Send Message Tests', function() {
         let timer = setTimeout(() => {
 
             ua1.unregister();
+            ua1.stop();
             ua11.unregister();
+            ua11.stop();
             uaAlice.unregister();
+            uaAlice.stop();
+
             done('Cработал таймаут');
         }, 3000);
 
@@ -273,7 +285,9 @@ describe('Send Message Tests', function() {
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
                     ua1.unregister();
+                    ua1.stop();
                     uaAlice.unregister();
+                    uaAlice.stop();
                     done();
                 }, 1000);
             } else {
@@ -285,7 +299,9 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
             done('Cработал таймаут');
         }, 3000);
 
@@ -352,7 +368,9 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
@@ -367,7 +385,9 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
             done('Cработал таймаут');
         }, 3000);
 
@@ -434,7 +454,9 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
@@ -449,8 +471,12 @@ describe('Send Message Tests', function() {
         ua1.start();
 
         let timer = setTimeout(() => {
+
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
+
             done('Cработал таймаут');
         }, 3000);
 
@@ -519,7 +545,9 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
@@ -535,7 +563,9 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
             done('Cработал таймаут');
         }, 3000);
 
@@ -601,7 +631,9 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
@@ -616,7 +648,9 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
             done('Cработал таймаут');
         }, 3000);
 
@@ -682,7 +716,9 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
@@ -697,7 +733,9 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
             done('Cработал таймаут');
         }, 3000);
 
@@ -763,8 +801,11 @@ describe('Send Message Tests', function() {
 
         ua1.on('message', function(msg) {
             clearTimeout(timer);
+
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
@@ -780,7 +821,10 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
+
             done('Cработал таймаут');
         }, 3000);
 
@@ -846,7 +890,9 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
@@ -862,7 +908,9 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
             done('Cработал таймаут');
         }, 3000);
 
@@ -929,7 +977,9 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
@@ -944,7 +994,9 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
             done('Cработал таймаут');
         }, 3000);
 
@@ -1010,12 +1062,14 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
-                setTimeout(function() {
+                // setTimeout(function() {
                     done();
-                }, 1000);
+                // }, 1000);
             } else {
                 done('Message not Hello Bob!');
             }
@@ -1025,7 +1079,10 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
+
             done('Cработал таймаут');
         }, 3000);
 
@@ -1091,12 +1148,14 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
-                setTimeout(function() {
+                // setTimeout(function() {
                     done();
-                }, 1000);
+                // }, 1000);
 
             } else {
                 done('Message not Hello Bob!');
@@ -1107,7 +1166,10 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
+
             done('Cработал таймаут');
         }, 3000);
 
@@ -1173,7 +1235,9 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
@@ -1189,7 +1253,10 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
+
             done('Cработал таймаут');
         }, 3000);
 
@@ -1255,7 +1322,9 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
@@ -1270,7 +1339,10 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
+
             done('Cработал таймаут');
         }, 3000);
 
@@ -1336,7 +1408,9 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
@@ -1351,7 +1425,10 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
+
             done('Cработал таймаут');
         }, 3000);
 
@@ -1417,7 +1494,9 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
@@ -1433,7 +1512,10 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
+
             done('Cработал таймаут');
         }, 3000);
 
@@ -1499,7 +1581,9 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
                 setTimeout(function() {
@@ -1515,7 +1599,9 @@ describe('Send Message Tests', function() {
 
         let timer = setTimeout(() => {
             ua1.unregister();
+            ua1.stop();
             uaAlice.unregister();
+            uaAlice.stop();
             done('Cработал таймаут');
         }, 3000);
 
@@ -1582,9 +1668,9 @@ describe('Send Message Tests', function() {
             done('Ошибка: Зарегистрировался аккаунт к остановленному сип серверу');
         });
 
-
         let timer = setTimeout(() => {
             uaAlice.unregister();
+            uaAlice.stop();
             done();
         }, 7000);
 

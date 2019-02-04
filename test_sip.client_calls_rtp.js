@@ -83,13 +83,15 @@ describe('Call Tests media transfer', function() {
         });
 
         uaAlice.on('unregistered', function(response, err) {
-            setTimeout(function() {
+            // setTimeout(function() {
+                uaAlice.stop();
+
                 if (err) {
                     done(err);
                 } else {
                     done();
                 }
-            }, 1000);
+            // }, 1000);
         });
         uaAlice.start();
     });
@@ -204,7 +206,9 @@ describe('Call Tests media transfer', function() {
                             
                             session.bye();
                             ua1.unregister();
+                            ua1.stop();
                             uaAlice.unregister();
+                            uaAlice.stop();
 
                             if (isEqualBuffers()) {
                                 done();
@@ -226,9 +230,9 @@ describe('Call Tests media transfer', function() {
         this.timeout(50000);
 
         let ua2 = new SIP.UA({
-            uri: 'sip:2@127.0.0.1',
-            user: '2',
-            password: '2',
+            uri: 'sip:1@127.0.0.1',
+            user: '1',
+            password: '1',
             // wsServers: ['ws://127.0.0.1:8506'],
             wsServers: ['udp://127.0.0.1:5060'],
             //wsServers: ['tcp://127.0.0.1:5061'],
@@ -261,15 +265,15 @@ describe('Call Tests media transfer', function() {
                     }
                 };
 
-                let session = ua2.invite('sip:3@127.0.0.1', options);
+                let session = ua2.invite('sip:alice@127.0.0.1', options);
             });
             file.pipe(reader);
         }, 2000);
 
         let ua3 = new SIP.UA({
-            uri: 'sip:3@127.0.0.1',
-            user: '3',
-            password: '3',
+            uri: 'sip:alice@127.0.0.1',
+            user: 'alice',
+            password: 'alice',
             wsServers: ['ws://127.0.0.1:8506'],
             // wsServers: ['udp://127.0.0.1:5060'],
             //wsServers: ['tcp://127.0.0.1:5061'],
@@ -331,7 +335,9 @@ describe('Call Tests media transfer', function() {
 
                             session.bye();
                             ua2.unregister();
+                            ua2.stop();
                             ua3.unregister();
+                            ua3.stop();
 
                             if (isEqualBuffers()) {
                                 done();
@@ -459,7 +465,9 @@ describe('Call Tests media transfer', function() {
 
                             session.bye();
                             ua1.unregister();
+                            ua1.stop();
                             uaAlice.unregister();
+                            uaAlice.stop();
 
                             if (isEqualBuffers()) {
                                 done();
@@ -585,7 +593,9 @@ describe('Call Tests media transfer', function() {
 
                             session.bye();
                             ua1.unregister();
+                            ua1.stop();
                             uaAlice.unregister();
+                            uaAlice.stop();
 
                             if (isEqualBuffers()) {
                                 done();
@@ -636,6 +646,7 @@ describe('Call Tests media transfer', function() {
 
         let timer = setTimeout(() => {
             uaAlice.unregister();
+            uaAlice.stop();
             done();
         }, 7000);
 

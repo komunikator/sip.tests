@@ -52,7 +52,7 @@
             "expires": 60,
             "user": "alice",
             "password": "alice",
-            "disable": 0,
+            "disable": 1,
             "type": "sip",
             "transport": "udp"
         },

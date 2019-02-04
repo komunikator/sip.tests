@@ -4,7 +4,7 @@
   "description": "Full sip stack testing",
   "main": "test.js",
   "scripts": {
-    "test": "mocha test_sip.client_calls_rtp.js --timeout 90000"
+    "test": "mocha test_sip.client_mars.js --timeout 90000"
   },
   "repository": {
     "type": "git",
