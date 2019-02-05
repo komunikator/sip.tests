@@ -50,8 +50,8 @@
         "1": {
             "host": "127.0.0.1",
             "expires": 60,
-            "user": "alice",
-            "password": "alice",
+            "user": "1",
+            "password": "1",
             "disable": 1,
             "type": "sip",
             "transport": "udp"
@@ -70,7 +70,7 @@
             "expires": 60,
             "user": "3",
             "password": "3",
-            "disable": 0,
+            "disable": 1,
             "type": "sip",
             "transport": "udp"
         }

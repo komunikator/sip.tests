@@ -6,7 +6,8 @@ let mars;
 
 // ********************** Общие функции **************************
 function startMars() {
-    mars = require('child_process').fork(__dirname + '/node_modules/mars/mars.js', {silent: true, execPath: 'node'});
+    // mars = require('child_process').fork(__dirname + '/node_modules/mars/mars.js', {silent: true, execPath: 'node'});
+    mars = require('mars');
 }
 
 function stopMars() {
@@ -26,6 +27,10 @@ describe('Start Server', function() {
                 1: {
                     user: '1',
                     password: '1'
+                },
+                2: {
+                    user: '2',
+                    password: '2'
                 },
                 alice: {
                     user: 'alice',
@@ -193,14 +198,17 @@ describe('Call Tests Echo', function() {
 
                         // newData = new Buffer( convertoUlawToPcmu(newData) );
 
-                        let rtcBuffer = new Buffer(newData.length);
-                        newData.copy(rtcBuffer);
+                        // let rtcBuffer = new Buffer(newData.length);
+                        // newData.copy(rtcBuffer);
+
+                        // let totalLength = outData.length + rtcBuffer.length;
+                        // outData = Buffer.concat([outData, rtcBuffer], totalLength);
+
+                        let totalLength = outData.length + newData.length;
+                        outData = Buffer.concat([outData, newData], totalLength);
 
                         // console.log('rtcBuffer', rtcBuffer);
                         // console.log('newData', newData);
-
-                        let totalLength = outData.length + rtcBuffer.length;
-                        outData = Buffer.concat([outData, rtcBuffer], totalLength);
 
                         // console.log('outData', outData);
                         // console.log('outData.length', outData.length);
@@ -217,29 +225,39 @@ describe('Call Tests Echo', function() {
                     player.on('event', (data) => {
                         // console.log('event data: ', data);
                     });
-                }, 1000);
+                }, 7000);
 
                 // Проверка на корректность передачи данных
                 setTimeout(() => {
-                    stopMars();
+                    // stopMars();
                     ua1.unregister();
+
+                    console.warn('ПРОВЕРКА ДАННЫХ');
 
                     if ( (outData && outData.length) && (inData && inData.length) ) {
                         for (let i = 0, len = outData.length; i < len; i++) {
 
                             // console.log(' ');
-                            // console.log('outData', outData[i], inData[i]);
+                            // console.log('outData', outData[i], 'inData', inData[i]);
+                            // console.log('inData', inData[i]);
                             // console.log('inData', inData[i]);
 
+                            // console.warn('outData.length', outData.length);
+                            // console.warn('inData.length', inData.length);
+
                             if (outData[i] != inData[i]) {
-                                return done('Buffer are not identical');
+                                console.log('index', i, 'outData', outData[i], 'inData', inData[i], 'outData.len', outData.length, 'inData.len', inData.length);
+                                // return done('Buffer are not identical 1');
                             }
                         }
                         done();
                     } else {
-                        done('Buffer are not identical');
+                        console.warn('outData.length', outData.length);
+                        console.warn('inData.length', inData.length);
+
+                        done('Buffer are not identical 2');
                     }
-                }, 10000);
+                }, 25000);
 
             }, 2000);
         }, 10000);
