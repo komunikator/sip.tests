@@ -5,7 +5,7 @@ describe('Call Tests media transfer', function() {
 
     it('Start Sip Server Register Unregister', function(done) {
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-        this.timeout(30000);
+        this.timeout(3000);
 
         let sipServerModule = require('sip.server');
         let settings = {
@@ -32,585 +32,687 @@ describe('Call Tests media transfer', function() {
             }
         };
 
-        // Чтение сертификатов сертификата
-        // let sslTls = getCertificate(settings.tls.key, settings.tls.cert);
-        // settings['tls']['key'] = sslTls['key'];
-        // settings['tls']['cert'] = sslTls['cert'];
-
-        // let sslWss = getCertificate(settings.wss.key, settings.wss.cert);
-        // settings['wss']['key'] = sslWss['key'];
-        // settings['wss']['cert'] = sslWss['cert'];
-
-        function getCertificate(keyPath, crtPath) {
-            let key = '';
-            let cert = '';
-
-            if (fs.existsSync(keyPath) && fs.existsSync(crtPath)) {
-                key = fs.readFileSync(keyPath); 
-                cert = fs.readFileSync(crtPath);
-            }
-
-            return { 
-                key: key,
-                cert: cert
-            };
-        }
-
         sipServer = new sipServerModule.SipServer(settings);
         sipServer.ProxyStart(settings);
 
         let uaAlice = new SIP.UA({
-            //uri: 'sip:1@127.0.0.1',
             uri: 'sip:1@127.0.0.1',
             user: '1',
             password: '1',
+            // wsServers: ['wss://127.0.0.1:8507'],
             // wsServers: ['ws://127.0.0.1:8506'],
-            //wsServers: ['udp://127.0.0.1:5060'],
-            //wsServers: ['tcp://127.0.0.1:5061'],
-            wsServers: ['tls://127.0.0.1:5062'],
+            wsServers: ['udp://127.0.0.1:5060'],
+            // wsServers: ['tcp://127.0.0.1:5061'],
+            // wsServers: ['tls://127.0.0.1:5062'],
             register: true,
             // mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
             //mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
             registerExpires: 120,
             // transport: 'ws'
-            //transport: 'udp'
+            transport: 'udp'
             //transport: 'tcp'
-            transport: 'tls'
+            // transport: 'tls'
         });
 
         uaAlice.on('registered', function() {
+            console.warn('registered');
             uaAlice.unregister();
         });
 
         uaAlice.on('unregistered', function(response, err) {
-            // setTimeout(function() {
-                uaAlice.stop();
+            console.log('UNREGISTER');
 
-                if (err) {
-                    done(err);
-                } else {
-                    done();
-                }
-            // }, 1000);
+            uaAlice.unregister();
+            uaAlice.stop();
+
+            if (err) {
+                done(err);
+            } else {
+                done();
+            }
         });
         uaAlice.start();
     });
 
+
     it('Call UDP <- UDP', function(done) {
         this.timeout(50000);
 
-        let ua1 = new SIP.UA({
-            uri: 'sip:1@127.0.0.1',
-            user: '1',
-            password: '1',
-            //wsServers: ['ws://127.0.0.1:8506'],
-            wsServers: ['udp://127.0.0.1:5060'],
-            //wsServers: ['tcp://127.0.0.1:5061'],
-            //wsServers: ['tls://127.0.0.1:5062'],
-            register: true,
-            mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
-            //mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
-            registerExpires: 120,
-            //transport: 'ws'
-            transport: 'udp'
-                //transport: 'tcp'
-                //transport: 'tls'
-        });
+        let sessionUa1;
+        let registerUa1 = false;
+        let registerUaAlice = false;
+        let isSendingInvite = false;
+        let fs = require('fs');
+        let timerEndData;
 
-        let logger = ua1.getLogger('test');
-
-        setTimeout(function() {
-            let fs = require('fs');
-            let wav = require('wav');
-            let fileName = 'media/Добро_пожаловать_в демонстрацию_системы_MARS.wav';
-
-            // Передача файла по rtp
-            let file = fs.createReadStream(fileName);
-            let reader = new wav.Reader();
-
-            reader.on('format', function(format) {
-                let options = {
-                    media: {
-                        stream: reader
-                    }
-                };
-
-                let session = ua1.invite('sip:alice@127.0.0.1', options);
-            });
-            file.pipe(reader);
-        }, 2000);
-
-        let uaAlice = new SIP.UA({
-            uri: 'sip:alice@127.0.0.1',
-            user: 'alice',
-            password: 'alice',
-            //wsServers: ['ws://127.0.0.1:8506'],
-            wsServers: ['udp://127.0.0.1:5060'],
-            //wsServers: ['tcp://127.0.0.1:5061'],
-            //wsServers: ['tls://127.0.0.1:5062'],
-            register: true,
-            mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
-            //mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
-            registerExpires: 120,
-            //transport: 'ws'
-            transport: 'udp'
-                //transport: 'tcp'
-                //transport: 'tls'
-        });
-
-        uaAlice.on('invite', function(session) {
-            let fs = require('fs');
-            let wav = require('wav');
-            let fileName = 'media/Спасибо_за_оценку.wav';
-
-            // Передача файла по rtp
-            let file = fs.createReadStream(fileName);
-            let reader = new wav.Reader();
-
-            reader.on('format', function(format) {
-                let options = {
-                    media: {
-                        stream: reader
-                    }
-                };
-
-                session.accept(options);
-
-                let fileNameRemoteStream = 'rec/remoteStream.raw';
-                let remoteStream = session.getRemoteStreams();
-                let writeStream = fs.createWriteStream(fileNameRemoteStream);
-
-                remoteStream.on('data', (data) => {
-                    writeStream.write(data);
-                });
-
-                // Проверка на корректность переданных данных
-                setTimeout(() => {
-                    let remoteStream = fs.readFileSync(fileNameRemoteStream);
-                    let readStream = fs.createReadStream('media/Добро_пожаловать_в демонстрацию_системы_MARS.wav');
-                    let wavReader = new wav.Reader();
-
-                    wavReader.on('format', function(format) {
-                        wavReader.on('data', (data) => {
-                            remoteStream = remoteStream.slice(1, data.length + 1);
-
-                            function isEqualBuffers() {
-                                for (let i = 0, len = data.length; i < len; i++) {
-                                    if (data[i] != remoteStream[i]) {
-                                        return false;
-                                    }
-                                }
-                                return true;
-                            }
-
-                            
-                            session.bye();
-                            ua1.unregister();
-                            ua1.stop();
-                            uaAlice.unregister();
-                            uaAlice.stop();
-
-                            if (isEqualBuffers()) {
-                                done();
-                            } else {
-                                done('Buffer are not identical');
-                            }
-                        });
-                    });
-                    readStream.pipe(wavReader);
-                }, 6000);
-
-            });
-            file.pipe(reader);
-        });
-
-    });
-
-    it('Call UDP <- WS', function(done) {
-        this.timeout(50000);
-
-        let ua2 = new SIP.UA({
-            uri: 'sip:1@127.0.0.1',
-            user: '1',
-            password: '1',
-            // wsServers: ['ws://127.0.0.1:8506'],
-            wsServers: ['udp://127.0.0.1:5060'],
-            //wsServers: ['tcp://127.0.0.1:5061'],
-            //wsServers: ['tls://127.0.0.1:5062'],
-            register: true,
-            mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
-            //mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
-            registerExpires: 120,
-            //transport: 'ws'
-            transport: 'udp'
-                //transport: 'tcp'
-                //transport: 'tls'
-        });
-
-        let logger = ua2.getLogger('test');
-
-        setTimeout(function() {
-            let fs = require('fs');
-            let wav = require('wav');
-            let fileName = 'media/Добро_пожаловать_в демонстрацию_системы_MARS.wav';
-
-            // Передача файла по rtp
-            let file = fs.createReadStream(fileName);
-            let reader = new wav.Reader();
-
-            reader.on('format', function(format) {
-                let options = {
-                    media: {
-                        stream: reader
-                    }
-                };
-
-                let session = ua2.invite('sip:alice@127.0.0.1', options);
-            });
-            file.pipe(reader);
-        }, 2000);
-
-        let ua3 = new SIP.UA({
-            uri: 'sip:alice@127.0.0.1',
-            user: 'alice',
-            password: 'alice',
-            wsServers: ['ws://127.0.0.1:8506'],
-            // wsServers: ['udp://127.0.0.1:5060'],
-            //wsServers: ['tcp://127.0.0.1:5061'],
-            //wsServers: ['tls://127.0.0.1:5062'],
-            register: true,
-            mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
-            //mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
-            registerExpires: 120,
-            transport: 'ws'
-            // transport: 'udp'
-                //transport: 'tcp'
-                //transport: 'tls'
-        });
-
-        ua3.on('invite', function(session) {
-            let fs = require('fs');
-            let wav = require('wav');
-            let fileName = 'media/Спасибо_за_оценку.wav';
-
-            // Передача файла по rtp
-            let file = fs.createReadStream(fileName);
-            let reader = new wav.Reader();
-
-            reader.on('format', function(format) {
-                let options = {
-                    media: {
-                        stream: reader
-                    }
-                };
-
-                session.accept(options);
-
-                let fileNameRemoteStream = 'rec/remoteStream.raw';
-                let remoteStream = session.getRemoteStreams();
-                let writeStream = fs.createWriteStream(fileNameRemoteStream);
-
-                remoteStream.on('data', (data) => {
-                    writeStream.write(data);
-                });
-
-                // Проверка на корректность переданных данных
-                setTimeout(() => {
-                    let remoteStream = fs.readFileSync(fileNameRemoteStream);
-                    let readStream = fs.createReadStream('media/Добро_пожаловать_в демонстрацию_системы_MARS.wav');
-                    let wavReader = new wav.Reader();
-
-                    wavReader.on('format', function(format) {
-                        wavReader.on('data', (data) => {
-                            remoteStream = remoteStream.slice(1, data.length + 1);
-
-                            function isEqualBuffers() {
-                                for (let i = 0, len = data.length; i < len; i++) {
-                                    if (data[i] != remoteStream[i]) {
-                                        return false;
-                                    }
-                                }
-                                return true;
-                            }
-
-                            session.bye();
-                            ua2.unregister();
-                            ua2.stop();
-                            ua3.unregister();
-                            ua3.stop();
-
-                            if (isEqualBuffers()) {
-                                done();
-                            } else {
-                                done('Buffer are not identical');
-                            }
-                        });
-                    });
-                    readStream.pipe(wavReader);
-                }, 6000);
-
-            });
-            file.pipe(reader);
-        });
-    });
-    
-
-    
-    it('Call TCP <- UDP', function(done) {
-        this.timeout(50000);
+        let outStream = fs.createReadStream('media/Спасибо_за_оценку.wav');
+        let inStream = fs.createWriteStream('rec/remoteStream.raw');
 
         let ua1 = new SIP.UA({
             uri: 'sip:1@127.0.0.1',
             user: '1',
             password: '1',
-            //wsServers: ['ws://127.0.0.1:8506'],
-            // wsServers: ['udp://127.0.0.1:5060'],
-            wsServers: ['tcp://127.0.0.1:5061'],
-            //wsServers: ['tls://127.0.0.1:5062'],
+            wsServers: ['udp://127.0.0.1:5060'],
             register: true,
             mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
-            //mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
             registerExpires: 120,
-            //transport: 'ws'
-            // transport: 'udp'
-                transport: 'tcp'
-                //transport: 'tls'
+            transport: 'udp'
         });
 
-        let logger = ua1.getLogger('test');
+        ua1.on('registered', () => {
+            registerUa1 = true;
+            onAllRegisters();
+        });
 
-        setTimeout(function() {
-            let fs = require('fs');
-            let wav = require('wav');
-            let fileName = 'media/Добро_пожаловать_в демонстрацию_системы_MARS.wav';
+        function onAllRegisters() {
+            if (registerUa1 && registerUaAlice && !isSendingInvite) {
+                isSendingInvite = true;
+                sendInviteAlice();
+            }
+        }
 
-            // Передача файла по rtp
-            let file = fs.createReadStream(fileName);
-            let reader = new wav.Reader();
+        function sendInviteAlice() {
+            sessionUa1 = ua1.invite('sip:alice@127.0.0.1');
 
-            reader.on('format', function(format) {
-                let options = {
-                    media: {
-                        stream: reader
-                    }
-                };
+            let remoteStream = sessionUa1.getRemoteStreams();
 
-                let session = ua1.invite('sip:alice@127.0.0.1', options);
+            remoteStream.on('data', (data) => {
+                console.log('UA1 remoteStream data', data);
+                inStream.write(data);
+
+                clearTimeout(timerEndData);
+                timerEndData = setTimeout(() => {
+                    checkMediaData();
+                }, 1000);
             });
-            file.pipe(reader);
-        }, 2000);
+        }
 
         let uaAlice = new SIP.UA({
             uri: 'sip:alice@127.0.0.1',
             user: 'alice',
             password: 'alice',
-            //wsServers: ['ws://127.0.0.1:8506'],
             wsServers: ['udp://127.0.0.1:5060'],
-            //wsServers: ['tcp://127.0.0.1:5061'],
-            //wsServers: ['tls://127.0.0.1:5062'],
             register: true,
             mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
-            //mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
             registerExpires: 120,
-            //transport: 'ws'
             transport: 'udp'
-                //transport: 'tcp'
-                //transport: 'tls'
+        });
+
+        uaAlice.on('registered', () => {
+            registerUaAlice = true;
+
+            onAllRegisters();
         });
 
         uaAlice.on('invite', function(session) {
-            let fs = require('fs');
-            let wav = require('wav');
-            let fileName = 'media/Спасибо_за_оценку.wav';
+            console.warn('invite');
 
-            // Передача файла по rtp
-            let file = fs.createReadStream(fileName);
+            let wav = require('wav');
             let reader = new wav.Reader();
 
-            reader.on('format', function(format) {
-                let options = {
-                    media: {
-                        stream: reader
-                    }
-                };
-
-                session.accept(options);
-
-                let fileNameRemoteStream = 'rec/remoteStream.raw';
-                let remoteStream = session.getRemoteStreams();
-                let writeStream = fs.createWriteStream(fileNameRemoteStream);
-
-                remoteStream.on('data', (data) => {
-                    writeStream.write(data);
-                });
-
-                // Проверка на корректность переданных данных
-                setTimeout(() => {
-                    let remoteStream = fs.readFileSync(fileNameRemoteStream);
-                    let readStream = fs.createReadStream('media/Добро_пожаловать_в демонстрацию_системы_MARS.wav');
-                    let wavReader = new wav.Reader();
-
-                    wavReader.on('format', function(format) {
-                        wavReader.on('data', (data) => {
-                            remoteStream = remoteStream.slice(1, data.length + 1);
-
-                            function isEqualBuffers() {
-                                for (let i = 0, len = data.length; i < len; i++) {
-                                    if (data[i] != remoteStream[i]) {
-                                        return false;
-                                    }
-                                }
-                                return true;
-                            }
-
-                            session.bye();
-                            ua1.unregister();
-                            ua1.stop();
-                            uaAlice.unregister();
-                            uaAlice.stop();
-
-                            if (isEqualBuffers()) {
-                                done();
-                            } else {
-                                done('Buffer are not identical');
-                            }
-                        });
-                    });
-                    readStream.pipe(wavReader);
-                }, 6000);
-
+            session.accept({
+                media: {
+                    stream: reader
+                }
             });
-            file.pipe(reader);
+
+            let remoteStream = session.getRemoteStreams();
+
+            remoteStream.on('data', (data) => {
+                console.log('UaAlice remoteStream data', data);
+            });
+
+            sessionUa1.on('accepted', () => {
+                outStream.pipe(reader);
+            });
         });
+
+        function checkMediaData() {
+            let wav = require('wav');
+            let remoteStream = fs.readFileSync('rec/remoteStream.raw');
+            let readStream = fs.createReadStream('media/Спасибо_за_оценку.wav');
+            let wavReader = new wav.Reader();
+
+            wavReader.on('data', (data) => {
+                function isEqualBuffers() {
+                    for (let i = 0, len = data.length; i < len; i++) {
+                        console.log('Сравнение данных', remoteStream[i], data[i]);
+
+                        if (data[i] != remoteStream[i]) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                sessionUa1.bye();
+                ua1.unregister();
+                ua1.stop();
+                uaAlice.unregister();
+                uaAlice.stop();
+
+                if (isEqualBuffers()) {
+                    done();
+                } else {
+                    done('Buffer are not identical');
+                }
+            });
+            readStream.pipe(wavReader);
+        }
     });
+
+
 
     it('Call TCP <- TCP', function(done) {
         this.timeout(50000);
 
+        let sessionUa1;
+        let registerUa1 = false;
+        let registerUaAlice = false;
+        let isSendingInvite = false;
+        let fs = require('fs');
+        let timerEndData;
+
+        let outStream = fs.createReadStream('media/Спасибо_за_оценку.wav');
+        let inStream = fs.createWriteStream('rec/remoteStream.raw');
+
         let ua1 = new SIP.UA({
             uri: 'sip:1@127.0.0.1',
             user: '1',
             password: '1',
-            //wsServers: ['ws://127.0.0.1:8506'],
-            // wsServers: ['udp://127.0.0.1:5060'],
             wsServers: ['tcp://127.0.0.1:5061'],
-            //wsServers: ['tls://127.0.0.1:5062'],
             register: true,
             mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
-            //mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
             registerExpires: 120,
-            //transport: 'ws'
-            // transport: 'udp'
-                transport: 'tcp'
-                //transport: 'tls'
+            transport: 'tcp'
         });
 
-        let logger = ua1.getLogger('test');
+        ua1.on('registered', () => {
+            registerUa1 = true;
+            onAllRegisters();
+        });
 
-        setTimeout(function() {
-            let fs = require('fs');
-            let wav = require('wav');
-            let fileName = 'media/Добро_пожаловать_в демонстрацию_системы_MARS.wav';
+        function onAllRegisters() {
+            if (registerUa1 && registerUaAlice && !isSendingInvite) {
+                isSendingInvite = true;
+                sendInviteAlice();
+            }
+        }
 
-            // Передача файла по rtp
-            let file = fs.createReadStream(fileName);
-            let reader = new wav.Reader();
+        function sendInviteAlice() {
+            sessionUa1 = ua1.invite('sip:alice@127.0.0.1');
 
-            reader.on('format', function(format) {
-                let options = {
-                    media: {
-                        stream: reader
-                    }
-                };
+            let remoteStream = sessionUa1.getRemoteStreams();
 
-                let session = ua1.invite('sip:alice@127.0.0.1', options);
+            remoteStream.on('data', (data) => {
+                console.log('UA1 remoteStream data', data);
+                inStream.write(data);
+
+                clearTimeout(timerEndData);
+                timerEndData = setTimeout(() => {
+                    checkMediaData();
+                }, 1000);
             });
-            file.pipe(reader);
-        }, 2000);
+        }
 
         let uaAlice = new SIP.UA({
             uri: 'sip:alice@127.0.0.1',
             user: 'alice',
             password: 'alice',
-            //wsServers: ['ws://127.0.0.1:8506'],
-            // wsServers: ['udp://127.0.0.1:5060'],
             wsServers: ['tcp://127.0.0.1:5061'],
-            //wsServers: ['tls://127.0.0.1:5062'],
             register: true,
             mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
-            //mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
             registerExpires: 120,
-            //transport: 'ws'
-            // transport: 'udp'
             transport: 'tcp'
-                //transport: 'tls'
+        });
+
+        uaAlice.on('registered', () => {
+            registerUaAlice = true;
+
+            onAllRegisters();
         });
 
         uaAlice.on('invite', function(session) {
-            let fs = require('fs');
-            let wav = require('wav');
-            let fileName = 'media/Спасибо_за_оценку.wav';
+            console.warn('invite');
 
-            // Передача файла по rtp
-            let file = fs.createReadStream(fileName);
+            let wav = require('wav');
             let reader = new wav.Reader();
 
-            reader.on('format', function(format) {
-                let options = {
-                    media: {
-                        stream: reader
-                    }
-                };
-
-                session.accept(options);
-
-                let fileNameRemoteStream = 'rec/remoteStream.raw';
-                let remoteStream = session.getRemoteStreams();
-                let writeStream = fs.createWriteStream(fileNameRemoteStream);
-
-                remoteStream.on('data', (data) => {
-                    writeStream.write(data);
-                });
-
-                // Проверка на корректность переданных данных
-                setTimeout(() => {
-                    let remoteStream = fs.readFileSync(fileNameRemoteStream);
-                    let readStream = fs.createReadStream('media/Добро_пожаловать_в демонстрацию_системы_MARS.wav');
-                    let wavReader = new wav.Reader();
-
-                    wavReader.on('format', function(format) {
-                        wavReader.on('data', (data) => {
-                            remoteStream = remoteStream.slice(1, data.length + 1);
-
-                            function isEqualBuffers() {
-                                for (let i = 0, len = data.length; i < len; i++) {
-                                    if (data[i] != remoteStream[i]) {
-                                        return false;
-                                    }
-                                }
-                                return true;
-                            }
-
-                            session.bye();
-                            ua1.unregister();
-                            ua1.stop();
-                            uaAlice.unregister();
-                            uaAlice.stop();
-
-                            if (isEqualBuffers()) {
-                                done();
-                            } else {
-                                done('Buffer are not identical');
-                            }
-                        });
-                    });
-                    readStream.pipe(wavReader);
-                }, 6000);
-
+            session.accept({
+                media: {
+                    stream: reader
+                }
             });
-            file.pipe(reader);
+
+            let remoteStream = session.getRemoteStreams();
+
+            remoteStream.on('data', (data) => {
+                console.log('UaAlice remoteStream data', data);
+            });
+
+            sessionUa1.on('accepted', () => {
+                outStream.pipe(reader);
+            });
         });
+
+        function checkMediaData() {
+            let wav = require('wav');
+            let remoteStream = fs.readFileSync('rec/remoteStream.raw');
+            let readStream = fs.createReadStream('media/Спасибо_за_оценку.wav');
+            let wavReader = new wav.Reader();
+
+            wavReader.on('data', (data) => {
+                function isEqualBuffers() {
+                    for (let i = 0, len = data.length; i < len; i++) {
+                        console.log('Сравнение данных', remoteStream[i], data[i]);
+
+                        if (data[i] != remoteStream[i]) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                sessionUa1.bye();
+                ua1.unregister();
+                ua1.stop();
+                uaAlice.unregister();
+                uaAlice.stop();
+
+                if (isEqualBuffers()) {
+                    done();
+                } else {
+                    done('Buffer are not identical');
+                }
+            });
+            readStream.pipe(wavReader);
+        }
     });
+
+
+
+    it('Call TLS <- TLS', function(done) {
+        this.timeout(50000);
+
+        let sessionUa1;
+        let registerUa1 = false;
+        let registerUaAlice = false;
+        let isSendingInvite = false;
+        let fs = require('fs');
+        let timerEndData;
+
+        let outStream = fs.createReadStream('media/Спасибо_за_оценку.wav');
+        let inStream = fs.createWriteStream('rec/remoteStream.raw');
+
+        let ua1 = new SIP.UA({
+            uri: 'sip:1@127.0.0.1',
+            user: '1',
+            password: '1',
+            wsServers: ['tls://127.0.0.1:5062'],
+            register: true,
+            mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
+            registerExpires: 120,
+            transport: 'tls'
+        });
+
+        ua1.on('registered', () => {
+            registerUa1 = true;
+            onAllRegisters();
+        });
+
+        function onAllRegisters() {
+            if (registerUa1 && registerUaAlice && !isSendingInvite) {
+                isSendingInvite = true;
+                sendInviteAlice();
+            }
+        }
+
+        function sendInviteAlice() {
+            sessionUa1 = ua1.invite('sip:alice@127.0.0.1');
+
+            let remoteStream = sessionUa1.getRemoteStreams();
+
+            remoteStream.on('data', (data) => {
+                console.log('UA1 remoteStream data', data);
+                inStream.write(data);
+
+                clearTimeout(timerEndData);
+                timerEndData = setTimeout(() => {
+                    checkMediaData();
+                }, 1000);
+            });
+        }
+
+        let uaAlice = new SIP.UA({
+            uri: 'sip:alice@127.0.0.1',
+            user: 'alice',
+            password: 'alice',
+            wsServers: ['tls://127.0.0.1:5062'],
+            register: true,
+            mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
+            registerExpires: 120,
+            transport: 'tls'
+        });
+
+        uaAlice.on('registered', () => {
+            registerUaAlice = true;
+
+            onAllRegisters();
+        });
+
+        uaAlice.on('invite', function(session) {
+            console.warn('invite');
+
+            let wav = require('wav');
+            let reader = new wav.Reader();
+
+            session.accept({
+                media: {
+                    stream: reader
+                }
+            });
+
+            let remoteStream = session.getRemoteStreams();
+
+            remoteStream.on('data', (data) => {
+                console.log('UaAlice remoteStream data', data);
+            });
+
+            sessionUa1.on('accepted', () => {
+                outStream.pipe(reader);
+            });
+        });
+
+        function checkMediaData() {
+            let wav = require('wav');
+            let remoteStream = fs.readFileSync('rec/remoteStream.raw');
+            let readStream = fs.createReadStream('media/Спасибо_за_оценку.wav');
+            let wavReader = new wav.Reader();
+
+            wavReader.on('data', (data) => {
+                function isEqualBuffers() {
+                    for (let i = 0, len = data.length; i < len; i++) {
+                        console.log('Сравнение данных', remoteStream[i], data[i]);
+
+                        if (data[i] != remoteStream[i]) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                sessionUa1.bye();
+                ua1.unregister();
+                ua1.stop();
+                uaAlice.unregister();
+                uaAlice.stop();
+
+                if (isEqualBuffers()) {
+                    done();
+                } else {
+                    done('Buffer are not identical');
+                }
+            });
+            readStream.pipe(wavReader);
+        }
+    });
+
+
+
+    it('Call WS <- WS', function(done) {
+        this.timeout(50000);
+
+        let sessionUa1;
+        let registerUa1 = false;
+        let registerUaAlice = false;
+        let isSendingInvite = false;
+        let fs = require('fs');
+        let timerEndData;
+
+        let outStream = fs.createReadStream('media/Спасибо_за_оценку.wav');
+        let inStream = fs.createWriteStream('rec/remoteStream.raw');
+
+        let ua1 = new SIP.UA({
+            uri: 'sip:1@127.0.0.1',
+            user: '1',
+            password: '1',
+            wsServers: ['ws://127.0.0.1:8506'],
+            register: true,
+            mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
+            registerExpires: 120,
+            transport: 'ws'
+        });
+
+        ua1.on('registered', () => {
+            registerUa1 = true;
+            onAllRegisters();
+        });
+
+        function onAllRegisters() {
+            if (registerUa1 && registerUaAlice && !isSendingInvite) {
+                isSendingInvite = true;
+                sendInviteAlice();
+            }
+        }
+
+        function sendInviteAlice() {
+            sessionUa1 = ua1.invite('sip:alice@127.0.0.1');
+
+            let remoteStream = sessionUa1.getRemoteStreams();
+
+            remoteStream.on('data', (data) => {
+                console.log('UA1 remoteStream data', data);
+                inStream.write(data);
+
+                clearTimeout(timerEndData);
+                timerEndData = setTimeout(() => {
+                    checkMediaData();
+                }, 1000);
+            });
+        }
+
+        let uaAlice = new SIP.UA({
+            uri: 'sip:alice@127.0.0.1',
+            user: 'alice',
+            password: 'alice',
+            wsServers: ['ws://127.0.0.1:8506'],
+            register: true,
+            mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
+            registerExpires: 120,
+            transport: 'ws'
+        });
+
+        uaAlice.on('registered', () => {
+            registerUaAlice = true;
+
+            onAllRegisters();
+        });
+
+        uaAlice.on('invite', function(session) {
+            console.warn('invite');
+
+            let wav = require('wav');
+            let reader = new wav.Reader();
+
+            session.accept({
+                media: {
+                    stream: reader
+                }
+            });
+
+            let remoteStream = session.getRemoteStreams();
+
+            remoteStream.on('data', (data) => {
+                console.log('UaAlice remoteStream data', data);
+            });
+
+            sessionUa1.on('accepted', () => {
+                outStream.pipe(reader);
+            });
+        });
+
+        function checkMediaData() {
+            let wav = require('wav');
+            let remoteStream = fs.readFileSync('rec/remoteStream.raw');
+            let readStream = fs.createReadStream('media/Спасибо_за_оценку.wav');
+            let wavReader = new wav.Reader();
+
+            wavReader.on('data', (data) => {
+                function isEqualBuffers() {
+                    for (let i = 0, len = data.length; i < len; i++) {
+                        console.log('Сравнение данных', remoteStream[i], data[i]);
+
+                        if (data[i] != remoteStream[i]) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                sessionUa1.bye();
+                ua1.unregister();
+                ua1.stop();
+                uaAlice.unregister();
+                uaAlice.stop();
+
+                if (isEqualBuffers()) {
+                    done();
+                } else {
+                    done('Buffer are not identical');
+                }
+            });
+            readStream.pipe(wavReader);
+        }
+    });
+
+
+
+    it('Call WSS <- WSS', function(done) {
+        this.timeout(50000);
+
+        let sessionUa1;
+        let registerUa1 = false;
+        let registerUaAlice = false;
+        let isSendingInvite = false;
+        let fs = require('fs');
+        let timerEndData;
+
+        let outStream = fs.createReadStream('media/Спасибо_за_оценку.wav');
+        let inStream = fs.createWriteStream('rec/remoteStream.raw');
+
+        let ua1 = new SIP.UA({
+            uri: 'sip:1@127.0.0.1',
+            user: '1',
+            password: '1',
+            wsServers: ['wss://127.0.0.1:8507'],
+            register: true,
+            mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
+            registerExpires: 120,
+            transport: 'ws'
+        });
+
+        ua1.on('registered', () => {
+            registerUa1 = true;
+            onAllRegisters();
+        });
+
+        function onAllRegisters() {
+            if (registerUa1 && registerUaAlice && !isSendingInvite) {
+                isSendingInvite = true;
+                sendInviteAlice();
+            }
+        }
+
+        function sendInviteAlice() {
+            sessionUa1 = ua1.invite('sip:alice@127.0.0.1');
+
+            let remoteStream = sessionUa1.getRemoteStreams();
+
+            remoteStream.on('data', (data) => {
+                console.log('UA1 remoteStream data', data);
+                inStream.write(data);
+
+                clearTimeout(timerEndData);
+                timerEndData = setTimeout(() => {
+                    checkMediaData();
+                }, 1000);
+            });
+        }
+
+        let uaAlice = new SIP.UA({
+            uri: 'sip:alice@127.0.0.1',
+            user: 'alice',
+            password: 'alice',
+            wsServers: ['wss://127.0.0.1:8507'],
+            register: true,
+            mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
+            registerExpires: 120,
+            transport: 'ws'
+        });
+
+        uaAlice.on('registered', () => {
+            registerUaAlice = true;
+
+            onAllRegisters();
+        });
+
+        uaAlice.on('invite', function(session) {
+            console.warn('invite');
+
+            let wav = require('wav');
+            let reader = new wav.Reader();
+
+            session.accept({
+                media: {
+                    stream: reader
+                }
+            });
+
+            let remoteStream = session.getRemoteStreams();
+
+            remoteStream.on('data', (data) => {
+                console.log('UaAlice remoteStream data', data);
+            });
+
+            sessionUa1.on('accepted', () => {
+                outStream.pipe(reader);
+            });
+        });
+
+        function checkMediaData() {
+            let wav = require('wav');
+            let remoteStream = fs.readFileSync('rec/remoteStream.raw');
+            let readStream = fs.createReadStream('media/Спасибо_за_оценку.wav');
+            let wavReader = new wav.Reader();
+
+            wavReader.on('data', (data) => {
+                function isEqualBuffers() {
+                    for (let i = 0, len = data.length; i < len; i++) {
+                        console.log('Сравнение данных', remoteStream[i], data[i]);
+
+                        if (data[i] != remoteStream[i]) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                sessionUa1.bye();
+                ua1.unregister();
+                ua1.stop();
+                uaAlice.unregister();
+                uaAlice.stop();
+
+                if (isEqualBuffers()) {
+                    done();
+                } else {
+                    done('Buffer are not identical');
+                }
+            });
+            readStream.pipe(wavReader);
+        }
+    });
+
 
     it('Stop Sip Server', function(done) {
         this.timeout(30000);
@@ -648,7 +750,7 @@ describe('Call Tests media transfer', function() {
             uaAlice.unregister();
             uaAlice.stop();
             done();
-        }, 7000);
+        }, 2000);
 
         uaAlice.start();
     });

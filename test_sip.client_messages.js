@@ -33,30 +33,6 @@ describe('Send Message Tests', function() {
             }
         };
 
-        // Чтение сертификатов сертификата
-        // let sslTls = getCertificate(settings.tls.key, settings.tls.cert);
-        // settings['tls']['key'] = sslTls['key'];
-        // settings['tls']['cert'] = sslTls['cert'];
-
-        // let sslWss = getCertificate(settings.wss.key, settings.wss.cert);
-        // settings['wss']['key'] = sslWss['key'];
-        // settings['wss']['cert'] = sslWss['cert'];
-
-        function getCertificate(keyPath, crtPath) {
-            let key = '';
-            let cert = '';
-
-            if (fs.existsSync(keyPath) && fs.existsSync(crtPath)) {
-                key = fs.readFileSync(keyPath); 
-                cert = fs.readFileSync(crtPath);
-            }
-
-            return { 
-                key: key,
-                cert: cert
-            };
-        }
-
         sipServer = new sipServerModule.SipServer(settings);
         sipServer.ProxyStart(settings);
 
@@ -86,13 +62,12 @@ describe('Send Message Tests', function() {
         uaAlice.on('unregistered', function(response, err) {
             uaAlice.unregister();
             uaAlice.stop();
-            // setTimeout(function() {
-                if (err) {
-                    done(err);
-                } else {
-                    done();
-                }
-            // }, 1000);
+
+            if (err) {
+                done(err);
+            } else {
+                done();
+            }
         });
         uaAlice.start();
     });
@@ -155,37 +130,6 @@ describe('Send Message Tests', function() {
                 console.log('MESSAGE ua11', msg.body, 'counterMessages', counterMessages);
 
                 if (msg.body == 'Hello Bob!') {
-                    // setTimeout(function() {
-                        // console.log('The received message UA11');
-                        if (counterMessages == 2) {
-                            clearTimeout(timer);
-
-                            ua1.unregister();
-                            ua1.stop();
-                            ua11.unregister();
-                            ua11.stop();
-                            uaAlice.unregister();
-                            uaAlice.stop();
-                            
-                            done();
-                        }
-                    // }, 1000);
-                } else {
-                    // done('Message not Hello Bob!');
-                }
-            });
-        });
-
-        ua1.on('message', function(msg) {
-            // console.log('MESSAGE', msg);
-            counterMessages++;
-
-
-            console.log('MESSAGE ua1', msg.body, 'counterMessages', counterMessages);
-
-            if (msg.body == 'Hello Bob!') {
-                // setTimeout(function() {
-                    // console.log('The received message UA1');
                     if (counterMessages == 2) {
                         clearTimeout(timer);
 
@@ -195,12 +139,32 @@ describe('Send Message Tests', function() {
                         ua11.stop();
                         uaAlice.unregister();
                         uaAlice.stop();
-
+                        
                         done();
                     }
-                // }, 1000);
-            } else {
-                // done('Message not Hello Bob!');
+                }
+            });
+        });
+
+        ua1.on('message', function(msg) {
+            counterMessages++;
+
+
+            console.log('MESSAGE ua1', msg.body, 'counterMessages', counterMessages);
+
+            if (msg.body == 'Hello Bob!') {
+                if (counterMessages == 2) {
+                    clearTimeout(timer);
+
+                    ua1.unregister();
+                    ua1.stop();
+                    ua11.unregister();
+                    ua11.stop();
+                    uaAlice.unregister();
+                    uaAlice.stop();
+
+                    done();
+                }
             }
         });
 
@@ -283,13 +247,13 @@ describe('Send Message Tests', function() {
             clearTimeout(timer);
 
             if (msg.body == 'Hello Bob!') {
-                setTimeout(function() {
+                // setTimeout(function() {
                     ua1.unregister();
                     ua1.stop();
                     uaAlice.unregister();
                     uaAlice.stop();
                     done();
-                }, 1000);
+                // }, 1000);
             } else {
                 done('Message not Hello Bob!');
             }
@@ -511,9 +475,6 @@ describe('Send Message Tests', function() {
             uaAlice.start();
         }
     });
-
-    // Ошибка
-    // TLSSocket error [url:"undefined", err:write EPROTO 140642022389568:error:14077410:SSL routines:SSL23_GET_SERVER_HELLO:sslv3 alert handshake failure:../deps/openssl/openssl/ssl/s23_clnt.c:772:]
 
     it('Send Message WS <- TLS', function(done) {
         this.timeout(10000);
@@ -1067,9 +1028,7 @@ describe('Send Message Tests', function() {
             uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
-                // setTimeout(function() {
-                    done();
-                // }, 1000);
+                done();
             } else {
                 done('Message not Hello Bob!');
             }
@@ -1153,10 +1112,7 @@ describe('Send Message Tests', function() {
             uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
-                // setTimeout(function() {
-                    done();
-                // }, 1000);
-
+                done();
             } else {
                 done('Message not Hello Bob!');
             }
@@ -1240,10 +1196,7 @@ describe('Send Message Tests', function() {
             uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
-                setTimeout(function() {
-                    done();
-                }, 1000);
-
+                done();
             } else {
                 done('Message not Hello Bob!');
             }
@@ -1327,9 +1280,7 @@ describe('Send Message Tests', function() {
             uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
-                setTimeout(function() {
-                    done();
-                }, 1000);
+                done();
             } else {
                 done('Message not Hello Bob!');
             }
@@ -1413,9 +1364,7 @@ describe('Send Message Tests', function() {
             uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
-                setTimeout(function() {
-                    done();
-                }, 1000);
+                done();
             } else {
                 done('Message not Hello Bob!');
             }
@@ -1499,10 +1448,7 @@ describe('Send Message Tests', function() {
             uaAlice.stop();
 
             if (msg.body == 'Hello Bob!') {
-                setTimeout(function() {
-                    done();
-                }, 1000);
-
+                done();
             } else {
                 done('Message not Hello Bob!');
             }
