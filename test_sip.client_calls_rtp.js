@@ -74,6 +74,132 @@ describe('Call Tests media transfer', function() {
         uaAlice.start();
     });
 
+    it('Call UDP <- WSS', function(done) {
+        this.timeout(50000);
+
+        let sessionUa1;
+        let registerUa1 = false;
+        let registerUaAlice = false;
+        let isSendingInvite = false;
+        let fs = require('fs');
+        let timerEndData;
+
+        let outStream = fs.createReadStream('media/Спасибо_за_оценку.wav');
+        let inStream = fs.createWriteStream('rec/remoteStream.raw');
+
+        let ua1 = new SIP.UA({
+            uri: 'sip:1@127.0.0.1',
+            user: '1',
+            password: '1',
+            wsServers: ['wss://127.0.0.1:8507'],
+            register: true,
+            mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
+            registerExpires: 120,
+            transport: 'wss'
+        });
+
+        ua1.on('registered', () => {
+            console.log('***************** REGISTER UA1');
+            registerUa1 = true;
+            onAllRegisters();
+        });
+
+        function onAllRegisters() {
+            if (registerUa1 && registerUaAlice && !isSendingInvite) {
+                isSendingInvite = true;
+                sendInviteAlice();
+            }
+        }
+
+        function sendInviteAlice() {
+            sessionUa1 = ua1.invite('sip:alice@127.0.0.1');
+
+            let remoteStream = sessionUa1.getRemoteStreams();
+
+            remoteStream.on('data', (data) => {
+                console.log('UA1 remoteStream data', data);
+                inStream.write(data);
+
+                clearTimeout(timerEndData);
+                timerEndData = setTimeout(() => {
+                    checkMediaData();
+                }, 1000);
+            });
+        }
+
+        let uaAlice = new SIP.UA({
+            uri: 'sip:alice@127.0.0.1',
+            user: 'alice',
+            password: 'alice',
+            wsServers: ['udp://127.0.0.1:5060'],
+            register: true,
+            mediaHandlerFactory: SIP.RTP.MediaHandler.defaultFactory,
+            registerExpires: 120,
+            transport: 'udp'
+        });
+
+        uaAlice.on('registered', () => {
+            registerUaAlice = true;
+
+            onAllRegisters();
+        });
+
+        uaAlice.on('invite', function(session) {
+            console.warn('invite');
+
+            let wav = require('wav');
+            let reader = new wav.Reader();
+
+            session.accept({
+                media: {
+                    stream: reader
+                }
+            });
+
+            let remoteStream = session.getRemoteStreams();
+
+            remoteStream.on('data', (data) => {
+                console.log('UaAlice remoteStream data', data);
+            });
+
+            sessionUa1.on('accepted', () => {
+                outStream.pipe(reader);
+            });
+        });
+
+        function checkMediaData() {
+            let wav = require('wav');
+            let remoteStream = fs.readFileSync('rec/remoteStream.raw');
+            let readStream = fs.createReadStream('media/Спасибо_за_оценку.wav');
+            let wavReader = new wav.Reader();
+
+            wavReader.on('data', (data) => {
+                function isEqualBuffers() {
+                    for (let i = 0, len = data.length; i < len; i++) {
+                        console.log('Сравнение данных', remoteStream[i], data[i]);
+
+                        if (data[i] != remoteStream[i]) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                sessionUa1.bye();
+                ua1.unregister();
+                ua1.stop();
+                uaAlice.unregister();
+                uaAlice.stop();
+
+                if (isEqualBuffers()) {
+                    done();
+                } else {
+                    done('Buffer are not identical');
+                }
+            });
+            readStream.pipe(wavReader);
+        }
+    });
 
     it('Call UDP <- UDP', function(done) {
         this.timeout(50000);
@@ -754,5 +880,4 @@ describe('Call Tests media transfer', function() {
 
         uaAlice.start();
     });
-
 });
