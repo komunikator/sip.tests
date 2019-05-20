@@ -42,42 +42,81 @@
     "recognize": {
         "type": "yandex",
         "options": {
-            "developer_key": "069b6659-984b-4c5f-880e-aaedcfd84102",
+            "developer_key": "",
             "model": "general"
         }
     },
     "sipAccounts": {
         "1": {
-            "host": "127.0.0.1",
+            "host": "127.0.0.1:5060",
             "expires": 60,
             "user": "1",
             "password": "1",
-            "disable": 1,
+            "disable": 0,
             "type": "sip",
             "transport": "udp"
         },
         "2": {
-            "host": "127.0.0.1",
+            "host": "127.0.0.1:5061",
             "expires": 60,
             "user": "2",
             "password": "2",
             "disable": 0,
             "type": "sip",
-            "transport": "udp"
+            "transport": "tcp"
         },
         "3": {
-            "host": "127.0.0.1",
+            "host": "127.0.0.1:8506",
             "expires": 60,
             "user": "3",
             "password": "3",
             "disable": 1,
             "type": "sip",
+            "transport": "ws"
+        },
+        "5894475a0e5216d64426d524": {
+            "host": "193.201.229.35",
+            "expires": 60,
+            "user": "xxxxxxxx",
+            "password": "xxxxxxxx",
+            "domain": "multifon.ru",
+            "disable": 1,
+            "type": "sip",
             "transport": "udp"
+        }
+    },
+    "b24accounts": {
+        "test1": {
+            "disable": 1,
+            "clientId": "APP_CLIENT_ID",
+            "clientSecret": "APP_CLIENT_SECRET",
+            "portalLink": "LINK_MY_PORTAL_BITRIX24",
+            "redirectUri": "MY_DOMAIN:PORT"
+        }
+    },
+    "SMPP": {
+        "SMPP_server_1": {
+            "host": "0.0.0.0",
+            "port": 80,
+            "connection_type": "trx",
+            "System_ID": "xxxx",
+            "password": "yyyy",
+            "sms_send_limit": 5,
+            "disable": 1
+        }
+    },
+    "SMPP_connections": {
+        "connect_1": {
+            "input": "number1",
+            "output": "number2",
+            "smpp_out": "SMPP_server_1",
+            "disable": 1
         }
     },
     "levels": {
         "[all]": "trace",
-        "http": "error"
+        "http": "error",
+        "smsc": "trace"
     },
     "replaceConsole": "false",
     "appenders": [
@@ -93,7 +132,8 @@
                 "http",
                 "rotation",
                 "sip_proxy",
-                "smpp"
+                "smsc",
+                "sms"
             ]
         },
         {
@@ -175,11 +215,73 @@
         },
         {
             "type": "file",
+            "filename": "logs/smsc.log",
+            "maxLogSize": 1048576,
+            "backups": 10,
+            "category": "smsc"
+        },
+        {
+            "type": "file",
+            "filename": "logs/sms.log",
+            "maxLogSize": 1048576,
+            "backups": 10,
+            "category": "sms"
+        },
+        {
+            "type": "file",
             "filename": "logs/smpp.log",
             "maxLogSize": 1048576,
             "backups": 10,
             "category": "smpp"
         }
     ],
-    "sipServer": "disable"
+    "sipServer": {
+        "udp": {
+            "port": 5060
+        },
+        "tcp": {
+            "port": 5061
+        },
+        "ws": {
+            "port": 8506
+        },
+        "accounts": [
+            {
+                "user": "1",
+                "password": "1"
+            },
+            {
+                "user": "2",
+                "password": "2"
+            },
+            {
+                "user": "3",
+                "password": "3"
+            },
+            {
+                "user": "4",
+                "password": "4"
+            },
+            {
+                "user": "5",
+                "password": "5"
+            },
+            {
+                "user": "6",
+                "password": "6"
+            },
+            {
+                "user": "7",
+                "password": "7"
+            },
+            {
+                "user": "8",
+                "password": "8"
+            },
+            {
+                "user": "9",
+                "password": "9"
+            }
+        ]
+    }
 }

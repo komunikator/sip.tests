@@ -4,7 +4,7 @@
   "description": "Full sip stack testing",
   "main": "test.js",
   "scripts": {
-    "test": "mocha test_sip.client_messages.js test_sip.client_calls_rtp.js --timeout 90000"
+    "test": "mocha test_sip.client_messages.js test_sip.client_mars.js test_sip.client_calls_rtp.js --timeout 90000"
   },
   "repository": {
     "type": "git",
@@ -13,7 +13,6 @@
   "author": "Akhmetgareev Evgeny Alexandrovich",
   "license": "ISC",
   "bugs": {
-
     "url": "https://github.com/komunikator/sip.tests/issues"
   },
   "homepage": "https://github.com/komunikator/sip.tests#readme",
