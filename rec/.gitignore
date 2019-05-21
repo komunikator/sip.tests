@@ -1,5 +1,5 @@
 /node_modules
 /.tmp
 /logs/*
-/rec/*.wav
+/rec/*
 package-lock.json
