@@ -2,4 +2,7 @@
 /.tmp
 /logs/*
 /rec/*.wav
+/rec/*.in
+/rec/*.out
+/media/temp/*
 package-lock.json
