@@ -180,9 +180,6 @@ describe('Call Tests Echo', function() {
                 var flagStopWrite = false;
                 var remoteStream = session.getRemoteStreams();
 
-                let fileNameRemoteStream = '/media/Добро_пожаловать_в демонстрацию_системы_MARS.wav';
-                // let writeStream = fs.createWriteStream(fileNameRemoteStream);
-
                 remoteStream.on('data', (data) => {
                     var newData = new Buffer(data.length - 12);
                     data.copy(newData, 0, 12);
